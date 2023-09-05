@@ -2,14 +2,16 @@ import requests
 import pprint
 import argparse
 from datetime import datetime
-
+from llzip import LatLongZipcode
 
 pp = pprint.PrettyPrinter(indent=4)
+llzip = LatLongZipcode()
 
 DATE_FORMAT = "%Y-%m-%d"
 TIME_FORMAT = "%H:%M"
 DATETIME_FORMAT= "{} {}".format(DATE_FORMAT, TIME_FORMAT)
 API = 'https://api.tidesandcurrents.noaa.gov/api/prod/datagetter'
+STATION_API = 'https://api.tidesandcurrents.noaa.gov/mdapi/prod/webapi/stations.json?type=tidepredictions'
 
 API_PARAM_TEMPLATE = {
     "begin_date": "",
@@ -28,6 +30,11 @@ API_PARAM_TEMPLATE = {
 def fetch_tide_predictions(begin_date, end_date, station):
     api_param = generate_api_param(begin_date, end_date, station)
     return requests.get(API, params=api_param).json()['predictions']
+
+def fetch_tide_station(zipcode):
+    stations = requests.get(STATION_API).json()['stations']
+    ziplat, ziplng = llzip.to_latlong(zipcode)
+    return min(stations, key=lambda s: abs(s["lat"] - ziplat)**2 + abs(s['lng'] - ziplng)**2)
 
 def generate_api_param(begin_date, end_date, station):
     api_param = dict(API_PARAM_TEMPLATE)
@@ -62,14 +69,27 @@ def get_args():
     parser.add_argument("end_date")
     parser.add_argument("-s", "--start_time", default="00:00")
     parser.add_argument("-e", "--end_time", default="23:59")
-    parser.add_argument("-t", "--low_tide", type=float, default=0.0)
+    parser.add_argument("-t", "--low_tide", default=0.0, type=float) 
     parser.add_argument("-d", "--weekdays", default="1234567")
+    parser.add_argument("-z", "--zipcode", default=98101, type=int)
     return parser.parse_args()
-    
+
+def _print_args(args):
+    print("Evaluating with params:")
+    varsargs = vars(args)
+    for k in ["begin_date", "end_date", "zipcode", "start_time", "end_time", "low_tide", "weekdays"]:
+        print("\t{}:\t{}".format(k, varsargs[k]))
+    print()
+
+def _print_station(station, zipcode):
+    print("Using data from station [{}] \"{}\" for {}\n".format(station["id"], station["name"], zipcode))
 
 def main(args):
-    print(args)
-    tides = fetch_tide_predictions(args.begin_date, args.end_date, '9446828')
+    _print_args(args)
+    station = fetch_tide_station(args.zipcode)
+    _print_station(station, args.zipcode)
+
+    tides = fetch_tide_predictions(args.begin_date, args.end_date, station["id"])
     tides = filter_tides(tides, lambda tide: tide <= args.low_tide)
     tides = filter_weekday(tides, args.weekdays)
     tides = filter_time(tides, start_time=args.start_time, end_time=args.end_time)
