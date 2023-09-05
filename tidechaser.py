@@ -1,10 +1,8 @@
 import requests
-import pprint
 import argparse
 from datetime import datetime
 from llzip import LatLongZipcode
 
-pp = pprint.PrettyPrinter(indent=4)
 llzip = LatLongZipcode()
 
 DATE_FORMAT = "%Y-%m-%d"
