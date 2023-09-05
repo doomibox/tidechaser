@@ -75,14 +75,22 @@ def get_args():
     return parser.parse_args()
 
 def _print_args(args):
-    print("Evaluating with params:")
+    print("\nEvaluating with params:")
     varsargs = vars(args)
     for k in ["begin_date", "end_date", "zipcode", "start_time", "end_time", "low_tide", "weekdays"]:
         print("\t{}:\t{}".format(k, varsargs[k]))
     print()
 
 def _print_station(station, zipcode):
-    print("Using data from station [{}] \"{}\" for {}\n".format(station["id"], station["name"], zipcode))
+    print("\nUsing data from station [{}] \"{}\" for {}:".format(station["id"], station["name"], zipcode))
+
+def _print_tides(tides):
+    # TODO: use pandas for better formatting
+    header = "{}\t{}".format("Time".ljust(16, " "), "Tide(ft)") # 16 = len("2023-01-01 00:00")
+    print("\n" + header)
+    print("=" * (len(header) + 8)) # 8 = 1 tab size
+    for t in tides:
+        print("{}\t{}".format(t["t"], t["v"]))
 
 def main(args):
     _print_args(args)
@@ -93,7 +101,7 @@ def main(args):
     tides = filter_tides(tides, lambda tide: tide <= args.low_tide)
     tides = filter_weekday(tides, args.weekdays)
     tides = filter_time(tides, start_time=args.start_time, end_time=args.end_time)
-    pp.pprint(tides)
+    _print_tides(tides)
     
 if __name__=='__main__':
     main(get_args())
