@@ -14,7 +14,7 @@ STATION_API = 'https://api.tidesandcurrents.noaa.gov/mdapi/prod/webapi/stations.
 API_PARAM_TEMPLATE = {
     "begin_date": "",
     "end_date": "", 
-    "station": "9446828",
+    "station": "",
     "application": "NOS.COOPS.TAC.TidePred", 
     "datum": "MLLW", 
     "format": "json",
